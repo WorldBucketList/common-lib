@@ -12,7 +12,9 @@ plugins {
 }
 
 group = 'com.example'
-version = '1.0.0'
+// Dynamically set version from environment variable (e.g., GitHub tag), fallback to default
+def tag = System.getenv("VERSION") ?: '0.0.1-SNAPSHOT'
+version = tag.startsWith("v") ? tag.substring(1) : tag
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -54,6 +56,16 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/WorldBucketList/common-lib")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+            }
         }
     }
 }

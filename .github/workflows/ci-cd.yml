@@ -1,0 +1,67 @@
+name: CI/CD Workflow
+
+on:
+  workflow_call:
+    inputs:
+      run-build:
+        required: false
+        type: boolean
+      run-tests:
+        required: false
+        type: boolean
+      run-publish:
+        required: false
+        type: boolean
+      version:
+        description: 'Version to publish (e.g. 1.2.3)'
+        required: false
+        type: string
+    secrets:
+      USERNAME:
+        required: false
+      TOKEN:
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build with Gradle
+        if: ${{ inputs.run-build == true }}
+        run: ./gradlew build --no-daemon
+
+      - name: Run tests
+        if: ${{ inputs.run-tests == true }}
+        run: ./gradlew test --no-daemon
+
+      - name: Extract version from tag (if tag-triggered)
+        id: tag
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Publish
+        if: ${{ inputs.run-publish == true }}
+        env:
+          USERNAME: ${{ secrets.USERNAME }}
+          TOKEN: ${{ secrets.TOKEN }}
+          VERSION: ${{ steps.tag.outputs.VERSION || inputs.version }}
+        run: ./gradlew publish --no-daemon

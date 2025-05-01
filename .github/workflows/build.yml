@@ -1,0 +1,19 @@
+name: Build and Test Common Library
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:  # Allows you to run this manually
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/ci-cd.yml
+    with:
+      run-build: true
+      run-tests: true

@@ -1,0 +1,23 @@
+name: Publish Common Library
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Example v1.0.0
+  workflow_dispatch:  # Allows you to run this manually
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 1.2.3)'
+        required: false
+
+jobs:
+  call-publish:
+    uses: ./.github/workflows/ci-cd.yml
+    with:
+      run-build: true
+      run-tests: true
+      run-publish: true
+      version: ${{ inputs.version }}
+    secrets:
+      USERNAME: ${{ secrets.GPR_USER }}
+      TOKEN: ${{ secrets.GPR_TOKEN }}
